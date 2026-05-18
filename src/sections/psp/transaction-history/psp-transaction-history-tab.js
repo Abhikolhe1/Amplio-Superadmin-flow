@@ -1,4 +1,5 @@
-import { useState, useCallback } from 'react';
+import PropTypes from 'prop-types';
+import { useState, useCallback, useMemo } from 'react';
 // @mui
 import Card from '@mui/material/Card';
 import Table from '@mui/material/Table';
@@ -13,8 +14,7 @@ import {
   TableHeadCustom,
   TablePaginationCustom,
 } from 'src/components/table';
-// mock
-import { _pspTransactionHistory } from 'src/_mock/_pspTransactionHistory';
+import { useGetPspTransactions } from 'src/api/psp-master';
 //
 import PSPTransactionHistoryRow from './psp-transaction-history-row';
 import PSPTransactionHistoryTableToolbar from './psp-transaction-history-table-toolbar';
@@ -22,16 +22,13 @@ import PSPTransactionHistoryTableToolbar from './psp-transaction-history-table-t
 // ----------------------------------------------------------------------
 
 const TABLE_HEAD = [
-  { id: 'id', label: 'Transaction ID' },
-  { id: 'merchantName', label: 'Merchant' },
+  { id: 'transactionId', label: 'Transaction ID' },
   { id: 'amount', label: 'Amount' },
+  { id: 'netVolume', label: 'Net Volume' },
+  { id: 'haircut', label: 'Haircut' },
+  { id: 'settlementDestination', label: 'Settlement Destination' },
   { id: 'status', label: 'Status' },
-  { id: 'paymentMode', label: 'Mode' },
-  { id: 'gateway', label: 'Gateway' },
-  { id: 'settlementId', label: 'Settlement ID' },
-  { id: 'spv', label: 'SPV' },
-  { id: 'dateTime', label: 'Date & Time' },
-  { id: 'remark', label: 'Remarks / Status Message' },
+  { id: 'mode', label: 'Mode' },
 ];
 
 const defaultFilters = {
@@ -40,12 +37,35 @@ const defaultFilters = {
 
 // ----------------------------------------------------------------------
 
-export default function PSPTransactionHistoryTab() {
+export default function PSPTransactionHistoryTab({ masterId }) {
   const table = useTable();
 
-  const [tableData] = useState(_pspTransactionHistory);
-
   const [filters, setFilters] = useState(defaultFilters);
+
+  const params = useMemo(
+    () => ({
+      limit: table.rowsPerPage,
+      skip: table.page * table.rowsPerPage,
+    }),
+    [table.page, table.rowsPerPage]
+  );
+
+  const { transactions = [], totalCount = 0 } = useGetPspTransactions(masterId, params);
+
+  const tableData = useMemo(
+    () =>
+      transactions.map((transaction) => ({
+        id: transaction.id,
+        transactionId: transaction.tnsId || transaction.id || '-',
+        amount: transaction.amount ?? 0,
+        netVolume: transaction.netAmount ?? 0,
+        haircut: transaction.haircut ?? 0,
+        settlementDestination: transaction.settlementDestination || '-',
+        status: transaction.pspStatus || transaction.status || '-',
+        mode: transaction.method || '-',
+      })),
+    [transactions]
+  );
 
   const dataFiltered = applyFilter({
     inputData: tableData,
@@ -78,14 +98,9 @@ export default function PSPTransactionHistoryTab() {
             />
 
             <TableBody>
-              {dataFiltered
-                .slice(
-                  table.page * table.rowsPerPage,
-                  table.page * table.rowsPerPage + table.rowsPerPage
-                )
-                .map((row) => (
-                  <PSPTransactionHistoryRow key={row.id} row={row} />
-                ))}
+              {dataFiltered.map((row) => (
+                <PSPTransactionHistoryRow key={row.id} row={row} />
+              ))}
 
               <TableNoData notFound={notFound} />
             </TableBody>
@@ -94,7 +109,7 @@ export default function PSPTransactionHistoryTab() {
       </TableContainer>
 
       <TablePaginationCustom
-        count={dataFiltered.length}
+        count={filters.name ? dataFiltered.length : totalCount}
         page={table.page}
         rowsPerPage={table.rowsPerPage}
         onPageChange={table.onChangePage}
@@ -124,11 +139,15 @@ function applyFilter({ inputData, comparator, filters }) {
   if (name) {
     inputData = inputData.filter(
       (item) =>
-        item.merchantName.toLowerCase().indexOf(name.toLowerCase()) !== -1 ||
-        item.id.toLowerCase().indexOf(name.toLowerCase()) !== -1 ||
-        item.settlementId.toLowerCase().indexOf(name.toLowerCase()) !== -1
+        item.transactionId.toLowerCase().indexOf(name.toLowerCase()) !== -1 ||
+        item.status.toLowerCase().indexOf(name.toLowerCase()) !== -1 ||
+        item.mode.toLowerCase().indexOf(name.toLowerCase()) !== -1
     );
   }
 
   return inputData;
 }
+
+PSPTransactionHistoryTab.propTypes = {
+  masterId: PropTypes.string,
+};

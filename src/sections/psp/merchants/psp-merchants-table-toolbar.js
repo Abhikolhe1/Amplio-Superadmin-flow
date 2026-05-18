@@ -35,7 +35,7 @@ export default function PSPMerchantsTableToolbar({ filters, onFilters }) {
           fullWidth
           value={filters.name}
           onChange={handleFilterName}
-          placeholder="Search merchant name or ID..."
+          placeholder="Search merchant name, company name, CIN or GSTIN..."
           InputProps={{
             startAdornment: (
               <InputAdornment position="start">

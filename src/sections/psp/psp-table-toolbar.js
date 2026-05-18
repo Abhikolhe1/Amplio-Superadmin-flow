@@ -62,7 +62,7 @@ export default function PSPTableToolbar({ filters, onFilters, statusOptions, ris
         ))}
       </TextField>
 
-      <TextField
+      {/* <TextField
         fullWidth
         select
         label="Risk Level"
@@ -77,7 +77,7 @@ export default function PSPTableToolbar({ filters, onFilters, statusOptions, ris
             {option.label}
           </MenuItem>
         ))}
-      </TextField>
+      </TextField> */}
 
       <Stack direction="row" alignItems="center" spacing={2} flexGrow={1} sx={{ width: 1 }}>
         <TextField
