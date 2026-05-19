@@ -4,12 +4,12 @@ import PSPTransactionHistoryTab from '../psp-transaction-history-tab';
 
 // ----------------------------------------------------------------------
 
-export default function PSPDetailsTransactionHistoryView({ history }) {
+export default function PSPDetailsTransactionHistoryView({ masterId }) {
   return (
-    <PSPTransactionHistoryTab />
+    <PSPTransactionHistoryTab masterId={masterId} />
   );
 }
 
 PSPDetailsTransactionHistoryView.propTypes = {
-  history: PropTypes.array,
+  masterId: PropTypes.string,
 };

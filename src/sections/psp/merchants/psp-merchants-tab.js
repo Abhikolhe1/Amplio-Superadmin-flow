@@ -1,5 +1,5 @@
-import isEqual from 'lodash/isEqual';
 import { useState, useCallback } from 'react';
+import PropTypes from 'prop-types';
 // @mui
 import Card from '@mui/material/Card';
 import Table from '@mui/material/Table';
@@ -14,8 +14,6 @@ import {
   TableHeadCustom,
   TablePaginationCustom,
 } from 'src/components/table';
-// mock
-import { _pspMerchants } from 'src/_mock/_pspMerchants';
 //
 import PSPMerchantsTableRow from './psp-merchants-table-row';
 import PSPMerchantsTableToolbar from './psp-merchants-table-toolbar';
@@ -23,10 +21,9 @@ import PSPMerchantsTableToolbar from './psp-merchants-table-toolbar';
 // ----------------------------------------------------------------------
 
 const TABLE_HEAD = [
-  { id: 'name', label: 'Merchant Name' },
-  { id: 'merchantId', label: 'Merchant ID' },
-  { id: 'volume', label: 'Volume (MTD)' },
-  { id: 'settlements', label: 'Settlements', align: 'center' },
+  { id: 'merchantName', label: 'Merchant Name' },
+  { id: 'cin', label: 'CIN' },
+  { id: 'gstin', label: 'GSTIN' },
   { id: 'status', label: 'Status' },
 ];
 
@@ -36,14 +33,12 @@ const defaultFilters = {
 
 // ----------------------------------------------------------------------
 
-export default function PSPMerchantsTab() {
+export default function PSPMerchantsTab({ merchants = [] }) {
   const table = useTable();
-
-  const [tableData] = useState(_pspMerchants);
   const [filters, setFilters] = useState(defaultFilters);
 
   const dataFiltered = applyFilter({
-    inputData: tableData,
+    inputData: merchants,
     comparator: getComparator(table.order, table.orderBy),
     filters,
   });
@@ -119,10 +114,16 @@ function applyFilter({ inputData, comparator, filters }) {
   if (name) {
     inputData = inputData.filter(
       (item) =>
-        item.name.toLowerCase().indexOf(name.toLowerCase()) !== -1 ||
-        item.merchantId.toLowerCase().indexOf(name.toLowerCase()) !== -1
+        item.merchantName.toLowerCase().indexOf(name.toLowerCase()) !== -1 ||
+        item.companyName.toLowerCase().indexOf(name.toLowerCase()) !== -1 ||
+        item.cin.toLowerCase().indexOf(name.toLowerCase()) !== -1 ||
+        item.gstin.toLowerCase().indexOf(name.toLowerCase()) !== -1
     );
   }
 
   return inputData;
 }
+
+PSPMerchantsTab.propTypes = {
+  merchants: PropTypes.array,
+};

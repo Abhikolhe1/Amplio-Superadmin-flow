@@ -11,26 +11,46 @@ import SummaryCard from 'src/components/summary-card';
 
 // ----------------------------------------------------------------------
 
+function formatCurrencyShort(amount) {
+  const value = Number(amount) || 0;
+  const absoluteValue = Math.abs(value);
+
+  if (absoluteValue >= 10000000) {
+    return `₹${(value / 10000000).toFixed(2)} Cr`;
+  }
+
+  if (absoluteValue >= 100000) {
+    return `₹${(value / 100000).toFixed(2)} L`;
+  }
+
+  return new Intl.NumberFormat('en-IN', {
+    style: 'currency',
+    currency: 'INR',
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 2,
+  }).format(value);
+}
+
 export default function PSPDetailsOverviewView({ psp }) {
   const theme = useTheme();
-  const { name, status, avgSettlementTime, lastSync, integrationType, financialSummary, settlementTrend } = psp;
+  const { name, status, statusColor, avgSettlementTime, lastSync, financialSummary, settlementTrend } = psp;
 
   const infoData = [
-    { label: 'PSP Name', value: name },
-    { label: 'Status', value: status, useLabel: true, color: status === 'active' ? 'success' : 'error' },
-    { label: 'Avg Settlement Time', value: avgSettlementTime },
-    { label: 'Last Data Sync', value: lastSync },
-    { label: 'Integration Type', value: integrationType },
+    { label: 'PSP Name', value: name || '-' },
+    { label: 'Status', value: status || '-', useLabel: true, color: statusColor || 'default' },
+    { label: 'Avg Settlement Time', value: avgSettlementTime || '-' },
+    { label: 'Last Data Sync', value: lastSync || '-' },
+    // { label: 'Integration Type', value: integrationType },
   ];
 
   const chartOptions = useChart({
     colors: [theme.palette.primary.main],
     xaxis: {
-      categories: settlementTrend.categories,
+      categories: settlementTrend?.categories || [],
     },
     tooltip: {
       y: {
-        formatter: (value) => `₹${value} Cr`,
+        formatter: (value) => formatCurrencyShort(value),
       },
     },
   });
@@ -40,7 +60,6 @@ export default function PSPDetailsOverviewView({ psp }) {
       <Grid item xs={12} md={6}>
         <SummaryCard title="PSP Information" data={infoData} />
       </Grid>
-
 
       <Grid item xs={12} md={6}>
         <Card sx={{ p: 3, height: 1 }}>
@@ -55,15 +74,18 @@ export default function PSPDetailsOverviewView({ psp }) {
                 sx={{
                   p: 2.5,
                   borderRadius: 2,
-                  bgcolor: (theme) => alpha(theme.palette.info.main, 0.08),
-                  border: (theme) => `1px solid ${alpha(theme.palette.info.main, 0.12)}`,
+                  bgcolor: (currentTheme) => alpha(currentTheme.palette.info.main, 0.08),
+                  border: (currentTheme) => `1px solid ${alpha(currentTheme.palette.info.main, 0.12)}`,
                 }}
               >
-                <Typography variant="caption" sx={{ color: 'info.main', fontWeight: 'bold', textTransform: 'uppercase' }}>
+                <Typography
+                  variant="caption"
+                  sx={{ color: 'info.main', fontWeight: 'bold', textTransform: 'uppercase' }}
+                >
                   Monthly Processing Volume
                 </Typography>
                 <Typography variant="h4" sx={{ color: 'info.darker' }}>
-                  ₹{financialSummary.monthlyVolume} Cr
+                  {formatCurrencyShort(financialSummary?.monthlyVolume)}
                 </Typography>
               </Stack>
             </Grid>
@@ -74,15 +96,19 @@ export default function PSPDetailsOverviewView({ psp }) {
                 sx={{
                   p: 2.5,
                   borderRadius: 2,
-                  bgcolor: (theme) => alpha(theme.palette.success.main, 0.08),
-                  border: (theme) => `1px solid ${alpha(theme.palette.success.main, 0.12)}`,
+                  bgcolor: (currentTheme) => alpha(currentTheme.palette.success.main, 0.08),
+                  border: (currentTheme) =>
+                    `1px solid ${alpha(currentTheme.palette.success.main, 0.12)}`,
                 }}
               >
-                <Typography variant="caption" sx={{ color: 'success.main', fontWeight: 'bold', textTransform: 'uppercase' }}>
-                  Total Settlements (MTD)
+                <Typography
+                  variant="caption"
+                  sx={{ color: 'success.main', fontWeight: 'bold', textTransform: 'uppercase' }}
+                >
+                  Total Settlement
                 </Typography>
                 <Typography variant="h4" sx={{ color: 'success.darker' }}>
-                  ₹{financialSummary.totalSettlements} Cr
+                  {formatCurrencyShort(financialSummary?.totalSettlements)}
                 </Typography>
               </Stack>
             </Grid>
@@ -95,15 +121,16 @@ export default function PSPDetailsOverviewView({ psp }) {
                 sx={{
                   p: 2,
                   borderRadius: 1.5,
-                  bgcolor: (theme) => alpha(theme.palette.warning.main, 0.04),
-                  border: (theme) => `1px solid ${alpha(theme.palette.warning.main, 0.1)}`,
+                  bgcolor: (currentTheme) => alpha(currentTheme.palette.warning.main, 0.04),
+                  border: (currentTheme) =>
+                    `1px solid ${alpha(currentTheme.palette.warning.main, 0.1)}`,
                 }}
               >
                 <Typography variant="subtitle2" sx={{ color: 'text.secondary' }}>
                   Pending Amount
                 </Typography>
                 <Typography variant="subtitle1" sx={{ color: 'warning.main', fontWeight: 700 }}>
-                  ₹{financialSummary.pendingAmount} Cr
+                  {formatCurrencyShort(financialSummary?.pendingAmount)}
                 </Typography>
               </Stack>
             </Grid>
@@ -116,15 +143,15 @@ export default function PSPDetailsOverviewView({ psp }) {
                 sx={{
                   p: 2,
                   borderRadius: 1.5,
-                  bgcolor: (theme) => alpha(theme.palette.error.main, 0.04),
-                  border: (theme) => `1px solid ${alpha(theme.palette.error.main, 0.1)}`,
+                  bgcolor: (currentTheme) => alpha(currentTheme.palette.error.main, 0.04),
+                  border: (currentTheme) => `1px solid ${alpha(currentTheme.palette.error.main, 0.1)}`,
                 }}
               >
                 <Typography variant="subtitle2" sx={{ color: 'text.secondary' }}>
                   Failed Transactions
                 </Typography>
                 <Typography variant="subtitle1" sx={{ color: 'error.main', fontWeight: 700 }}>
-                  {financialSummary.failedTransactions}
+                  {financialSummary?.failedTransactions ?? 0}
                 </Typography>
               </Stack>
             </Grid>
@@ -139,7 +166,7 @@ export default function PSPDetailsOverviewView({ psp }) {
           </Typography>
           <Chart
             type="line"
-            series={settlementTrend.series}
+            series={settlementTrend?.series || []}
             options={chartOptions}
             height={364}
           />
