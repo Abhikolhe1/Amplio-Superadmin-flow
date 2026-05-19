@@ -92,6 +92,13 @@ export const endpoints = {
     filterStatusList: (filter, status) =>
       `/psp-masters/admin-dashboard?filter=${filter}&status=${status}`,
   },
+  spvManagement: {
+    list: '/spv-management/list',
+    summary: '/spv-management/summary',
+    pools: (spvId) => `/spv-management/${spvId}/pools`,
+    newPoolApplication: (spvId) => `/spv-pre/new-pool-application/${spvId}`,
+    unallocatedFunds: '/admin/payment-verifications',
+  },
   companyProfiles: {
     list: '/company-profiles',
     filterList: (filter) => `/company-profiles?filter=${filter}`,
