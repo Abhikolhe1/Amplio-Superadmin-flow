@@ -3,8 +3,8 @@ import { _mock } from './_mock';
 // ----------------------------------------------------------------------
 
 export const PSP_STATUS_OPTIONS = [
-  { value: 'active', label: 'Active', color: 'success' },
-  { value: 'inactive', label: 'Inactive', color: 'error' },
+  { value: '1', label: 'Active', color: 'success' },
+  { value: '0', label: 'Inactive', color: 'error' },
 ];
 
 export const PSP_RISK_OPTIONS = [

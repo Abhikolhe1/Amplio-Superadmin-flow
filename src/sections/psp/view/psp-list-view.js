@@ -1,19 +1,15 @@
 import isEqual from 'lodash/isEqual';
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 // @mui
 import Card from '@mui/material/Card';
 import Table from '@mui/material/Table';
-import Button from '@mui/material/Button';
 import Container from '@mui/material/Container';
 import TableBody from '@mui/material/TableBody';
 import TableContainer from '@mui/material/TableContainer';
 // routes
 import { paths } from 'src/routes/paths';
 import { useRouter } from 'src/routes/hook';
-// hooks
-import { useBoolean } from 'src/hooks/use-boolean';
 // components
-import Iconify from 'src/components/iconify';
 import Scrollbar from 'src/components/scrollbar';
 import { useSettingsContext } from 'src/components/settings';
 import CustomBreadcrumbs from 'src/components/custom-breadcrumbs';
@@ -25,26 +21,31 @@ import {
   TablePaginationCustom,
 } from 'src/components/table';
 // mock
-import { _pspList, PSP_STATUS_OPTIONS, PSP_RISK_OPTIONS } from 'src/_mock/_psp';
+import { PSP_STATUS_OPTIONS, PSP_RISK_OPTIONS } from 'src/_mock/_psp';
 //
 import PSPTableRow from '../psp-table-row';
 import PSPTableToolbar from '../psp-table-toolbar';
 import PSPTableFiltersResult from '../psp-table-filters-result';
+import { useFilterPspData } from 'src/api/psp-master';
+import { buildFilter } from 'src/utils/filters';
 
 // ----------------------------------------------------------------------
 
-const STATUS_OPTIONS = [{ value: 'all', label: 'All' }, ...PSP_STATUS_OPTIONS];
+const STATUS_OPTIONS = [{ value: 'all', label: 'All' },
+{ value: '1', label: 'Active', color: 'success' },
+{ value: '0', label: 'Inactive', color: 'error' },
+];
 const RISK_OPTIONS = [{ value: 'all', label: 'All' }, ...PSP_RISK_OPTIONS];
 
 const TABLE_HEAD = [
   { id: 'name', label: 'PSP Name' },
   { id: 'status', label: 'Status' },
-  { id: 'riskLevel', label: 'Risk Level' },
+  // { id: 'riskLevel', label: 'Risk Level' },
   { id: 'merchantsCount', label: 'Merchants', align: 'center' },
   { id: 'totalSettlement', label: 'Total Settlement' },
   { id: 'transactionVolume', label: 'Volume' },
   { id: 'activeSettlements', label: 'Active Settlements', align: 'center' },
-  { id: 'avgSettlementTime', label: 'Avg Settlement Time', align: 'center' },
+  // { id: 'avgSettlementTime', label: 'Avg Settlement Time', align: 'center' },
   { id: '', label: 'Actions' },
 ];
 
@@ -61,8 +62,34 @@ export default function PSPListView() {
   const settings = useSettingsContext();
   const router = useRouter();
 
-  const [tableData, setTableData] = useState(_pspList);
+  const [tableData, setTableData] = useState([]);
   const [filters, setFilters] = useState(defaultFilters);
+
+  const filter = buildFilter({
+    page: table.page,
+    rowsPerPage: table.rowsPerPage,
+    order: table.order,
+    orderBy: table.orderBy,
+    validSortFields: ['name'],
+    searchTextValue: filters.name,
+    
+  });
+
+  if (filters.status !== 'all') {
+    filter.where = {
+      ...(filter.where || {}),
+      status: Number(filters.status),
+    };
+  }
+
+  const filterJson = encodeURIComponent(JSON.stringify(filter));
+  const params = { filter: filterJson };
+
+  const { filteredPspData = [], totalCount = {} } = useFilterPspData(params);
+
+  useEffect(() => {
+    setTableData(filteredPspData);
+  }, [filteredPspData]);
 
   const dataFiltered = applyFilter({
     inputData: tableData,
@@ -114,9 +141,9 @@ export default function PSPListView() {
       />
 
       <Card>
-        <PSPTableToolbar 
-          filters={filters} 
-          onFilters={handleFilters} 
+        <PSPTableToolbar
+          filters={filters}
+          onFilters={handleFilters}
           statusOptions={STATUS_OPTIONS}
           riskOptions={RISK_OPTIONS}
         />
@@ -145,21 +172,16 @@ export default function PSPListView() {
               />
 
               <TableBody>
-                {dataFiltered
-                  .slice(
-                    table.page * table.rowsPerPage,
-                    table.page * table.rowsPerPage + table.rowsPerPage
-                  )
-                  .map((row) => (
-                    <PSPTableRow
-                      key={row.id}
-                      row={row}
-                      selected={table.selected.includes(row.id)}
-                      onSelectRow={() => table.onSelectRow(row.id)}
-                      onDeleteRow={() => handleDeleteRow(row.id)}
-                      onViewRow={() => handleViewRow(row.id)}
-                    />
-                  ))}
+                {dataFiltered.map((row) => (
+                  <PSPTableRow
+                    key={row.id}
+                    row={row}
+                    selected={table.selected.includes(row.id)}
+                    onSelectRow={() => table.onSelectRow(row.id)}
+                    onDeleteRow={() => handleDeleteRow(row.id)}
+                    onViewRow={() => handleViewRow(row.id)}
+                  />
+                ))}
 
                 <TableNoData notFound={notFound} />
               </TableBody>
@@ -168,7 +190,7 @@ export default function PSPListView() {
         </TableContainer>
 
         <TablePaginationCustom
-          count={dataFiltered.length}
+          count={totalCount.totalCount || dataFiltered.length}
           page={table.page}
           rowsPerPage={table.rowsPerPage}
           onPageChange={table.onChangePage}
@@ -203,7 +225,7 @@ function applyFilter({ inputData, comparator, filters }) {
   }
 
   if (status !== 'all') {
-    inputData = inputData.filter((item) => item.status === status);
+    inputData = inputData.filter((item) => String(item.status) === String(status));
   }
 
   if (riskLevel !== 'all') {

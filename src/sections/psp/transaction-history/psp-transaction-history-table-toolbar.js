@@ -26,7 +26,7 @@ export default function PSPTransactionHistoryTableToolbar({ filters, onFilters }
         fullWidth
         value={filters.name}
         onChange={(event) => onFilters('name', event.target.value)}
-        placeholder="Search transaction ID, merchant or settlement ID..."
+        placeholder="Search transaction ID, status or mode..."
         InputProps={{
           startAdornment: (
             <InputAdornment position="start">

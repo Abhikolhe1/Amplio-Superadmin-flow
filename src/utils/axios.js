@@ -82,6 +82,22 @@ export const endpoints = {
   pspMaster: {
     list: '/psp-masters',
     details: (id) => `/psp-masters/${id}`,
+    dashboard: '/psp-masters/admin-dashboard',
+    dashboardDetails: (id) => `/psp-masters/admin-dashboard/${id}`,
+    bankDetails: (id) => `/psp-masters/${id}/bank-details`,
+    bankDetailsById: (id, accountId) => `/psp-masters/${id}/bank-details/${accountId}`,
+    transactions: (id) => `/psp-master/transactions/${id}`,
+    filterList: (filter) => `/psp-masters/admin-dashboard?filter=${filter}`,
+    statusList: (status) => `/psp-masters/admin-dashboard?status=${status}`,
+    filterStatusList: (filter, status) =>
+      `/psp-masters/admin-dashboard?filter=${filter}&status=${status}`,
+  },
+  spvManagement: {
+    list: '/spv-management/list',
+    summary: '/spv-management/summary',
+    pools: (spvId) => `/spv-management/${spvId}/pools`,
+    newPoolApplication: (spvId) => `/spv-pre/new-pool-application/${spvId}`,
+    unallocatedFunds: '/admin/payment-verifications',
   },
   companyProfiles: {
     list: '/company-profiles',
