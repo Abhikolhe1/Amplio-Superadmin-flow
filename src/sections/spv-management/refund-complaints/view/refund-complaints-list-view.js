@@ -1,7 +1,6 @@
 import PropTypes from 'prop-types';
 import { useCallback, useMemo, useState } from 'react';
 import Alert from '@mui/material/Alert';
-import Avatar from '@mui/material/Avatar';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
 import Card from '@mui/material/Card';
@@ -10,7 +9,6 @@ import DialogActions from '@mui/material/DialogActions';
 import DialogContent from '@mui/material/DialogContent';
 import DialogTitle from '@mui/material/DialogTitle';
 import Divider from '@mui/material/Divider';
-import Grid from '@mui/material/Grid';
 import MenuItem from '@mui/material/MenuItem';
 import Stack from '@mui/material/Stack';
 import Table from '@mui/material/Table';
@@ -43,23 +41,20 @@ const TABLE_HEAD = [
   { id: '', label: 'Action' },
 ];
 
+// Future API: statuses will come from the backend enum
 const STATUS_OPTIONS = ['Open', 'In Progress', 'Resolved'];
 
-const defaultFilters = {
-  name: '',
-};
+const defaultFilters = { name: '' };
 
 export default function RefundComplaintsListView({
   complaints = [],
   loading = false,
   error = null,
-  onSendReply,
   onUpdateComplaint,
 }) {
   const table = useTable({ defaultOrderBy: 'updatedAt' });
   const [filters, setFilters] = useState(defaultFilters);
   const [selectedComplaintId, setSelectedComplaintId] = useState(null);
-  const [replyText, setReplyText] = useState('');
 
   const dataFiltered = useMemo(
     () =>
@@ -82,10 +77,7 @@ export default function RefundComplaintsListView({
   const handleFilters = useCallback(
     (name, value) => {
       table.onResetPage();
-      setFilters((prevState) => ({
-        ...prevState,
-        [name]: value,
-      }));
+      setFilters((prevState) => ({ ...prevState, [name]: value }));
     },
     [table]
   );
@@ -94,29 +86,15 @@ export default function RefundComplaintsListView({
     setFilters(defaultFilters);
   }, []);
 
-  const handleClose = () => {
-    setSelectedComplaintId(null);
-    setReplyText('');
-  };
-
-  const handleSendReply = () => {
-    const trimmedReply = replyText.trim();
-
-    if (!selectedComplaint || !trimmedReply) {
-      return;
-    }
-
-    onSendReply?.(selectedComplaint.id, trimmedReply);
-    setReplyText('');
-  };
+  const handleClose = () => setSelectedComplaintId(null);
 
   return (
     <>
       <Card sx={{ borderRadius: 3 }}>
         <Box sx={{ px: 3, py: 2.5 }}>
-          <Typography variant="h6">Refund Complaints</Typography>
+          <Typography variant="h6">Complaints</Typography>
           <Typography variant="body2" sx={{ color: 'text.secondary', mt: 0.5 }}>
-            Review investor refund concerns and reply directly from the complaint thread.
+            Review investor complaints and update their resolution status.
           </Typography>
         </Box>
 
@@ -137,7 +115,7 @@ export default function RefundComplaintsListView({
         {error && (
           <Box sx={{ px: 2.5, pt: 2.5 }}>
             <Alert severity="error">
-              {error?.message || error?.error?.message || 'Unable to load refund complaints.'}
+              {error?.message || error?.error?.message || 'Unable to load complaints.'}
             </Alert>
           </Box>
         )}
@@ -189,149 +167,74 @@ export default function RefundComplaintsListView({
         />
       </Card>
 
-      <Dialog open={!!selectedComplaint} onClose={handleClose} maxWidth="lg" fullWidth>
-        <DialogTitle>Refund Complaint Conversation</DialogTitle>
+      <Dialog open={!!selectedComplaint} onClose={handleClose} maxWidth="sm" fullWidth>
+        <DialogTitle>Complaint Details</DialogTitle>
 
         {selectedComplaint && (
           <>
             <DialogContent dividers>
-              <Grid container spacing={3}>
-                <Grid item xs={12} md={8}>
-                  <Stack spacing={2.5}>
-                    <Box
-                      sx={{
-                        borderRadius: 2,
-                        border: (theme) => `1px solid ${theme.palette.divider}`,
-                        p: 2,
-                        maxHeight: 420,
-                        overflowY: 'auto',
-                        bgcolor: 'background.neutral',
-                      }}
-                    >
-                      <Stack spacing={2}>
-                        {selectedComplaint.messages.map((message) => {
-                          const isInvestor = message.senderType === 'investor';
-
-                          return (
-                            <Stack
-                              key={message.id}
-                              direction="row"
-                              spacing={1.5}
-                              justifyContent={isInvestor ? 'flex-start' : 'flex-end'}
-                            >
-                              {isInvestor && <Avatar>{message.sender.charAt(0)}</Avatar>}
-
-                              <Box
-                                sx={{
-                                  maxWidth: '78%',
-                                  px: 2,
-                                  py: 1.5,
-                                  borderRadius: 2,
-                                  bgcolor: isInvestor ? 'common.white' : 'primary.main',
-                                  color: isInvestor ? 'text.primary' : 'primary.contrastText',
-                                  boxShadow: (theme) => theme.customShadows.z8,
-                                }}
-                              >
-                                <Typography variant="subtitle2">{message.sender}</Typography>
-                                <Typography variant="body2" sx={{ mt: 0.5 }}>
-                                  {message.text}
-                                </Typography>
-                                <Typography
-                                  variant="caption"
-                                  sx={{
-                                    mt: 1,
-                                    display: 'block',
-                                    opacity: 0.72,
-                                  }}
-                                >
-                                  {fDateTime(message.createdAt)}
-                                </Typography>
-                              </Box>
-
-                              {!isInvestor && <Avatar sx={{ bgcolor: 'primary.main' }}>A</Avatar>}
-                            </Stack>
-                          );
-                        })}
-                      </Stack>
-                    </Box>
-
-                    <TextField
-                      label="Reply to investor"
-                      multiline
-                      minRows={4}
-                      value={replyText}
-                      onChange={(event) => setReplyText(event.target.value)}
-                      placeholder="Type your update, refund timeline, or next action..."
+              <Stack spacing={2.5}>
+                <Card variant="outlined" sx={{ p: 2.5 }}>
+                  <Typography variant="subtitle1" sx={{ mb: 2 }}>
+                    Complaint Info
+                  </Typography>
+                  <Stack spacing={1.5}>
+                    <DetailItem label="Investor" value={selectedComplaint.investorName} />
+                    <DetailItem label="Investor ID" value={selectedComplaint.investorId} />
+                    <DetailItem label="Order ID" value={selectedComplaint.orderId} />
+                    <DetailItem label="Transaction ID" value={selectedComplaint.transactionId} />
+                    <DetailItem
+                      label="Amount / Units"
+                      value={`${formatInrCurrency(selectedComplaint.amount)} / ${selectedComplaint.units}`}
                     />
+                    <DetailItem label="SPV" value={selectedComplaint.spvName} />
+                    <DetailItem label="Raised On" value={fDateTime(selectedComplaint.createdAt)} />
                   </Stack>
-                </Grid>
+                </Card>
 
-                <Grid item xs={12} md={4}>
-                  <Stack spacing={2}>
-                    <Card variant="outlined" sx={{ p: 2.5 }}>
-                      <Typography variant="subtitle1" sx={{ mb: 2 }}>
-                        Complaint Details
-                      </Typography>
-                      <Stack spacing={1.5}>
-                        <DetailItem label="Investor" value={selectedComplaint.investorName} />
-                        <DetailItem label="Order ID" value={selectedComplaint.orderId} />
-                        <DetailItem label="Transaction ID" value={selectedComplaint.transactionId} />
-                        <DetailItem
-                          label="Amount / Units"
-                          value={`${formatInrCurrency(selectedComplaint.amount)} / ${selectedComplaint.units}`}
-                        />
-                        <DetailItem label="SPV" value={selectedComplaint.spvName} />
-                        <DetailItem label="Raised On" value={fDateTime(selectedComplaint.createdAt)} />
-                      </Stack>
-                    </Card>
-
-                    {/* <Card variant="outlined" sx={{ p: 2.5 }}>
-                      <Typography variant="subtitle1" sx={{ mb: 2 }}>
-                        Complaint Status
-                      </Typography>
-                      <TextField
-                        select
-                        fullWidth
-                        label="Status"
-                        value={selectedComplaint.status}
-                        onChange={(event) =>
-                          onUpdateComplaint?.(selectedComplaint.id, { status: event.target.value })
-                        }
-                      >
-                        {STATUS_OPTIONS.map((option) => (
-                          <MenuItem key={option} value={option}>
-                            {option}
-                          </MenuItem>
-                        ))}
-                      </TextField>
-                    </Card> */}
-
-                    <Card variant="outlined" sx={{ p: 2.5 }}>
-                      <Typography variant="subtitle1" sx={{ mb: 1.5 }}>
-                        Investor Complaint
-                      </Typography>
-                      <Typography variant="body2" sx={{ color: 'text.secondary' }}>
+                <Card variant="outlined" sx={{ p: 2.5 }}>
+                  <Typography variant="subtitle1" sx={{ mb: 1.5 }}>
+                    Issue
+                  </Typography>
+                  <Typography variant="body2" color="text.secondary">
+                    {selectedComplaint.shortDescription}
+                  </Typography>
+                  {selectedComplaint.description &&
+                    selectedComplaint.description !== selectedComplaint.shortDescription && (
+                      <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
                         {selectedComplaint.description}
                       </Typography>
-                    </Card>
-                  </Stack>
-                </Grid>
-              </Grid>
+                    )}
+                </Card>
+
+                <Card variant="outlined" sx={{ p: 2.5 }}>
+                  <Typography variant="subtitle1" sx={{ mb: 1.5 }}>
+                    Status
+                  </Typography>
+                  {/* Future API: PATCH /complaints/:id { status } */}
+                  <TextField
+                    select
+                    fullWidth
+                    size="small"
+                    label="Update Status"
+                    value={selectedComplaint.status}
+                    onChange={(e) =>
+                      onUpdateComplaint?.(selectedComplaint.id, { status: e.target.value })
+                    }
+                  >
+                    {STATUS_OPTIONS.map((option) => (
+                      <MenuItem key={option} value={option}>
+                        {option}
+                      </MenuItem>
+                    ))}
+                  </TextField>
+                </Card>
+              </Stack>
             </DialogContent>
 
             <DialogActions sx={{ px: 3, py: 2 }}>
-              <Button onClick={handleClose} color="inherit">
+              <Button onClick={handleClose} variant="outlined" color="inherit">
                 Close
-              </Button>
-              <Button
-                variant="outlined"
-                color="success"
-                onClick={() => onUpdateComplaint?.(selectedComplaint.id, { status: 'Resolved' })}
-              >
-                Mark Resolved
-              </Button>
-              <Button variant="contained" onClick={handleSendReply} disabled={!replyText.trim()}>
-                Send Reply
               </Button>
             </DialogActions>
           </>
@@ -344,7 +247,7 @@ export default function RefundComplaintsListView({
 function DetailItem({ label, value }) {
   return (
     <Stack direction="row" justifyContent="space-between" spacing={2}>
-      <Typography variant="body2" sx={{ color: 'text.secondary' }}>
+      <Typography variant="body2" sx={{ color: 'text.secondary', flexShrink: 0 }}>
         {label}
       </Typography>
       <Typography variant="body2" sx={{ textAlign: 'right', fontWeight: 600 }}>
@@ -363,7 +266,6 @@ RefundComplaintsListView.propTypes = {
   complaints: PropTypes.array,
   loading: PropTypes.bool,
   error: PropTypes.any,
-  onSendReply: PropTypes.func,
   onUpdateComplaint: PropTypes.func,
 };
 
@@ -381,7 +283,6 @@ function applyFilter({ inputData, comparator, filters }) {
 
   if (name) {
     const searchValue = name.toLowerCase();
-
     filteredData = filteredData.filter(
       (item) =>
         String(item.investorName || '').toLowerCase().includes(searchValue) ||

@@ -37,7 +37,7 @@ const TABS = [
   { value: 'pool_ptc', label: 'Pool & PTC' },
   { value: 'transaction_history', label: 'Transaction History' },
   { value: 'unallocated_funds', label: 'Unallocated Funds' },
-  { value: 'refund_complaints', label: 'Refund Complaints' },
+  { value: 'complaints', label: 'Complaints' },
   { value: 'rejected_orders', label: 'Rejected Orders' },
   { value: 'closed_transactions', label: 'Closed Transactions' },
 ];
@@ -69,7 +69,7 @@ export default function SPVDetailsView() {
   }, [spv]);
 
   const handleChangeTab = useCallback(
-    (event, newValue) => {
+    (_event, newValue) => {
       setCurrentTab(newValue);
       router.push({
         search: `?tab=${newValue}`,
@@ -107,32 +107,6 @@ export default function SPVDetailsView() {
     },
     [router]
   );
-
-  const handleSendComplaintReply = useCallback((complaintId, replyText) => {
-    setRefundComplaints((prev) =>
-      prev.map((complaint) => {
-        if (complaint.id !== complaintId) {
-          return complaint;
-        }
-
-        return {
-          ...complaint,
-          status: complaint.status === 'Resolved' ? 'Resolved' : 'In Progress',
-          updatedAt: new Date().toISOString(),
-          messages: [
-            ...complaint.messages,
-            {
-              id: `${complaint.id}-reply-${complaint.messages.length + 1}`,
-              sender: 'SPV Ops',
-              senderType: 'admin',
-              text: replyText,
-              createdAt: new Date().toISOString(),
-            },
-          ],
-        };
-      })
-    );
-  }, []);
 
   const handleUpdateComplaint = useCallback((complaintId, updates) => {
     setRefundComplaints((prev) =>
@@ -225,10 +199,11 @@ export default function SPVDetailsView() {
           error={unallocatedFundsError}
         />
       )}
-      {currentTab === 'refund_complaints' && (
+      {currentTab === 'complaints' && (
+        // Future API: fetch complaints by spvId, each complaint carries orderId + investorId
+        // matching the investor SupportDialog payload: { orderId, issue, description }
         <RefundComplaintsListView
           complaints={refundComplaints}
-          onSendReply={handleSendComplaintReply}
           onUpdateComplaint={handleUpdateComplaint}
         />
       )}
