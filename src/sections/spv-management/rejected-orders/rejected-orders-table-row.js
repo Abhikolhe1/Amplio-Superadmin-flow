@@ -1,69 +1,102 @@
 import PropTypes from 'prop-types';
 import Button from '@mui/material/Button';
-import ListItemText from '@mui/material/ListItemText';
 import TableCell from '@mui/material/TableCell';
 import TableRow from '@mui/material/TableRow';
-import Typography from '@mui/material/Typography';
 import Label from 'src/components/label';
+import { fDateTime } from 'src/utils/format-time';
 import { formatInrCurrency } from '../utils';
+import { IconButton, Tooltip } from '@mui/material';
+import Iconify from 'src/components/iconify';
 
-const STATUS_COLOR = {
-  'Pending Decision': 'warning',
-  'Refund Approved': 'success',
-  'Units Reallocated': 'info',
+export const ORDER_STATUS_CONFIG = {
+  CREATED: {
+    label: 'Created',
+    color: 'default',
+  },
+  AGREEMENT_SIGNED: {
+    label: 'Agreement Signed',
+    color: 'info',
+  },
+  PAYMENT_PENDING: {
+    label: 'Payment Pending',
+    color: 'warning',
+  },
+  UTR_SUBMITTED: {
+    label: 'UTR Submitted',
+    color: 'info',
+  },
+  PAYMENT_UNDER_REVIEW: {
+    label: 'Under Review',
+    color: 'warning',
+  },
+  PAYMENT_SUCCESS: {
+    label: 'Payment Success',
+    color: 'success',
+  },
+  PAYMENT_FAILED: {
+    label: 'Payment Failed',
+    color: 'error',
+  },
+  PAYMENT_TIMEOUT: {
+    label: 'Payment Timeout',
+    color: 'warning',
+  },
+  PTC_FREEZE_EXPIRED: {
+    label: 'Freeze Expired',
+    color: 'error',
+  },
+  CANCELLED: {
+    label: 'Cancelled',
+    color: 'default',
+  },
 };
 
 export default function RejectedOrdersTableRow({ row, onViewRow }) {
+  // const verificationLabel = row.verificationId
+  //   ? ['UTR_SUBMITTED', 'PAYMENT_UNDER_REVIEW'].includes(row.status)
+  //     ? 'Awaiting Review'
+  //     : 'Linked'
+  //   : 'Not Linked';
+  // const verificationColor = row.verificationId
+  //   ? ['UTR_SUBMITTED', 'PAYMENT_UNDER_REVIEW'].includes(row.status)
+  //     ? 'warning'
+  //     : 'info'
+  //   : 'default';
+
+  const statusConfig = ORDER_STATUS_CONFIG[row.status] || {
+    label: row.status,
+    color: 'default',
+  };
+
   return (
     <TableRow hover>
-      <TableCell>
-        <ListItemText
-          primary={row.investorName}
-          secondary={`${row.investorId} | ${row.orderId}`}
-          primaryTypographyProps={{ typography: 'body2', fontWeight: 700 }}
-          secondaryTypographyProps={{ typography: 'caption' }}
-        />
-      </TableCell>
+      <TableCell>{row.investorProfile?.companyName || '-'}</TableCell>
+
+      <TableCell sx={{ whiteSpace: 'nowrap' }}>{formatInrCurrency(row.amount)}</TableCell>
+
+      <TableCell sx={{ whiteSpace: 'nowrap' }}>{row.requestedUnits}</TableCell>
 
       <TableCell>
-        <ListItemText
-          primary={row.transactionId}
-          secondary={row.paymentReference}
-          primaryTypographyProps={{ typography: 'body2' }}
-          secondaryTypographyProps={{ typography: 'caption' }}
-        />
-      </TableCell>
-
-      <TableCell sx={{ whiteSpace: 'nowrap' }}>
-        <Typography variant="body2" sx={{ fontWeight: 600 }}>
-          {formatInrCurrency(row.amount)}
-        </Typography>
-      </TableCell>
-
-      <TableCell sx={{ whiteSpace: 'nowrap' }}>
-        <Typography variant="body2">{row.requestedUnits}</Typography>
-      </TableCell>
-
-      <TableCell sx={{ minWidth: 320 }}>
-        <Typography variant="body2">{row.rejectedReason}</Typography>
-      </TableCell>
-
-      <TableCell>
-        <Label variant="soft" color="success">
-          {row.paymentValidation}
+        <Label variant="soft" color={statusConfig.color}>
+          {statusConfig.label}
         </Label>
       </TableCell>
 
-      <TableCell>
-        <Label variant="soft" color={STATUS_COLOR[row.status] || 'default'}>
-          {row.status}
+      {/* <TableCell>
+        <Label variant="soft" color={verificationColor}>
+          {verificationLabel}
         </Label>
-      </TableCell>
+      </TableCell> */}
 
       <TableCell sx={{ whiteSpace: 'nowrap' }}>
-        <Button variant="outlined" onClick={() => onViewRow(row.id)}>
-          Review
-        </Button>
+        {row.createdAt ? fDateTime(row.createdAt) : '-'}
+      </TableCell>
+      <TableCell >
+        <Tooltip title="Details" placement="top" arrow>
+          <IconButton onClick={() => onViewRow(row.id)}>
+            <Iconify icon="solar:eye-bold" />
+          </IconButton>
+        </Tooltip>
       </TableCell>
     </TableRow>
   );

@@ -1,48 +1,52 @@
 import PropTypes from 'prop-types';
-import Button from '@mui/material/Button';
+import IconButton from '@mui/material/IconButton';
 import ListItemText from '@mui/material/ListItemText';
 import TableCell from '@mui/material/TableCell';
 import TableRow from '@mui/material/TableRow';
 import Typography from '@mui/material/Typography';
+import Iconify from 'src/components/iconify';
 import Label from 'src/components/label';
 import { fDateTime } from 'src/utils/format-time';
 import { formatInrCurrency } from '../utils';
 
 const STATUS_COLOR = {
-  Open: 'error',
-  'In Progress': 'warning',
-  Resolved: 'success',
+  OPEN: 'error',
+  IN_PROGRESS: 'warning',
+  RESOLVED: 'success',
+  CLOSED: 'default',
 };
+
+function formatStatus(status) {
+  if (!status) return 'Unknown';
+  return String(status)
+    .toLowerCase()
+    .split('_')
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+    .join(' ');
+}
 
 export default function RefundComplaintsTableRow({ row, onViewRow }) {
   return (
     <TableRow hover>
       <TableCell>
-        <ListItemText
-          primary={row.investorName}
-          secondary={`${row.investorId} | ${row.orderId}`}
-          primaryTypographyProps={{ typography: 'body2', fontWeight: 700 }}
-          secondaryTypographyProps={{ typography: 'caption' }}
-        />
+       {row.investorName}
       </TableCell>
 
       <TableCell sx={{ whiteSpace: 'nowrap' }}>
-        <Typography variant="body2" sx={{ fontWeight: 600 }}>
-          {formatInrCurrency(row.amount)}
-        </Typography>
+       {formatInrCurrency(row.amount)}
       </TableCell>
 
       <TableCell sx={{ whiteSpace: 'nowrap' }}>
-        <Typography variant="body2">{row.units}</Typography>
+        {row.units}
       </TableCell>
 
       <TableCell sx={{ minWidth: 320 }}>
-        <Typography variant="body2">{row.shortDescription}</Typography>
+       {row.shortDescription}
       </TableCell>
 
       <TableCell>
         <Label variant="soft" color={STATUS_COLOR[row.status] || 'default'}>
-          {row.status}
+          {formatStatus(row.status)}
         </Label>
       </TableCell>
 
@@ -60,9 +64,9 @@ export default function RefundComplaintsTableRow({ row, onViewRow }) {
       </TableCell>
 
       <TableCell sx={{ whiteSpace: 'nowrap' }}>
-        <Button variant="outlined" onClick={() => onViewRow(row.id)}>
-          View
-        </Button>
+        <IconButton onClick={() => onViewRow(row.id)}>
+          <Iconify icon="solar:eye-bold" />
+        </IconButton>
       </TableCell>
     </TableRow>
   );
