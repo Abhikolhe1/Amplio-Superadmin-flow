@@ -24,12 +24,16 @@ import { TransactionHistoryListView } from '../transaction-history/view';
 import { UnallocatedFundsListView } from '../unallocated-funds/view';
 import {
   createNewPoolApplication,
+  approveSpvManagementPaymentVerification,
+  getSpvManagementPaymentVerificationDetails,
+  useGetSpvManagementComplaints,
   useGetSpvManagementList,
+  useGetSpvManagementOrders,
   useGetSpvManagementPools,
   useGetSpvUnallocatedFunds,
+  updateSpvManagementComplaint,
 } from 'src/api/spvManagement';
 import { buildSpvDetails, buildSpvPoolRows } from '../utils';
-import { getRefundComplaintsShowcase, getRejectedOrdersShowcase } from '../showcase-data';
 
 const TABS = [
   { value: 'overview', label: 'Overview' },
@@ -37,8 +41,8 @@ const TABS = [
   { value: 'pool_ptc', label: 'Pool & PTC' },
   { value: 'transaction_history', label: 'Transaction History' },
   { value: 'unallocated_funds', label: 'Unallocated Funds' },
-  { value: 'refund_complaints', label: 'Refund Complaints' },
-  { value: 'rejected_orders', label: 'Rejected Orders' },
+  { value: 'complaints', label: 'Complaints' },
+  { value: 'rejected_orders', label: 'Orders' },
   { value: 'closed_transactions', label: 'Closed Transactions' },
 ];
 
@@ -55,21 +59,25 @@ export default function SPVDetailsView() {
   const { pools, poolsLoading, poolsError } = useGetSpvManagementPools(id);
   const { unallocatedFunds, unallocatedFundsLoading, unallocatedFundsError } =
     useGetSpvUnallocatedFunds(id);
-
+  const { complaints, complaintsLoading, complaintsError } = useGetSpvManagementComplaints(id);
+  const { orders, ordersLoading, ordersError, refreshOrders } = useGetSpvManagementOrders(id);
   const apiSpv = useMemo(() => spvList.find((item) => item.spvId === id), [id, spvList]);
   const spv = useMemo(() => buildSpvDetails(apiSpv), [apiSpv]);
   const mappedPools = useMemo(() => buildSpvPoolRows(pools), [pools]);
   const [refundComplaints, setRefundComplaints] = useState([]);
-  const [rejectedOrders, setRejectedOrders] = useState([]);
+  const [rejectedOrdersState, setRejectedOrdersState] = useState([]);
   const summaryCards = spv?.summaryCards || [];
 
   useEffect(() => {
-    setRefundComplaints(getRefundComplaintsShowcase(spv));
-    setRejectedOrders(getRejectedOrdersShowcase(spv));
-  }, [spv]);
+    setRefundComplaints(complaints);
+  }, [complaints]);
+
+  useEffect(() => {
+    setRejectedOrdersState(orders);
+  }, [orders]);
 
   const handleChangeTab = useCallback(
-    (event, newValue) => {
+    (_event, newValue) => {
       setCurrentTab(newValue);
       router.push({
         search: `?tab=${newValue}`,
@@ -108,59 +116,85 @@ export default function SPVDetailsView() {
     [router]
   );
 
-  const handleSendComplaintReply = useCallback((complaintId, replyText) => {
-    setRefundComplaints((prev) =>
-      prev.map((complaint) => {
-        if (complaint.id !== complaintId) {
-          return complaint;
+  const handleUpdateComplaint = useCallback(
+    async (complaintId, updates) => {
+      try {
+        const updatedComplaint = await updateSpvManagementComplaint(complaintId, updates);
+
+        setRefundComplaints((prev) =>
+          prev.map((complaint) => (complaint.id === complaintId ? updatedComplaint : complaint))
+        );
+
+        enqueueSnackbar('Complaint updated successfully', { variant: 'success' });
+
+        return updatedComplaint;
+      } catch (error) {
+        enqueueSnackbar(getErrorMessage(error, 'Unable to update complaint.'), {
+          variant: 'error',
+        });
+        throw error;
+      }
+    },
+    [enqueueSnackbar]
+  );
+
+  const handleRejectedOrderDecision = useCallback(
+    async (orderId, updates) => {
+      try {
+        if (updates?.decidedAction === 'allocate') {
+          const verificationId = updates?.verificationId;
+
+          if (!verificationId) {
+            throw new Error('This order has no linked verification to approve.');
+          }
+
+          await approveSpvManagementPaymentVerification(verificationId, updates.verifiedAmount);
+          await refreshOrders?.();
+          enqueueSnackbar('Manual allocation approved successfully.', { variant: 'success' });
+          return;
         }
 
-        return {
-          ...complaint,
-          status: complaint.status === 'Resolved' ? 'Resolved' : 'In Progress',
-          updatedAt: new Date().toISOString(),
-          messages: [
-            ...complaint.messages,
-            {
-              id: `${complaint.id}-reply-${complaint.messages.length + 1}`,
-              sender: 'SPV Ops',
-              senderType: 'admin',
-              text: replyText,
-              createdAt: new Date().toISOString(),
-            },
-          ],
-        };
-      })
-    );
-  }, []);
+        if (updates?.decidedAction === 'refund') {
+          const supportId = updates?.supportId;
 
-  const handleUpdateComplaint = useCallback((complaintId, updates) => {
-    setRefundComplaints((prev) =>
-      prev.map((complaint) =>
-        complaint.id === complaintId
-          ? {
-              ...complaint,
-              ...updates,
-              updatedAt: new Date().toISOString(),
-            }
-          : complaint
-      )
-    );
-  }, []);
+          if (!supportId) {
+            throw new Error('No linked refund complaint was found for this order.');
+          }
 
-  const handleRejectedOrderDecision = useCallback((orderId, updates) => {
-    setRejectedOrders((prev) =>
-      prev.map((order) =>
-        order.id === orderId
-          ? {
-              ...order,
-              ...updates,
-              notes: updates.resolutionNote || order.notes,
-            }
-          : order
-      )
-    );
-  }, []);
+          const responseText =
+            updates?.resolutionNote?.trim() || 'Refund review completed by superadmin.';
+
+          const updatedComplaint = await updateSpvManagementComplaint(supportId, {
+            status: 'RESOLVED',
+            adminResponse: responseText,
+            assignSuperAdmin: true,
+          });
+
+          setRefundComplaints((prev) =>
+            prev.map((complaint) => (complaint.id === supportId ? updatedComplaint : complaint))
+          );
+          enqueueSnackbar('Refund complaint resolved successfully.', { variant: 'success' });
+        }
+
+        setRejectedOrdersState((prev) =>
+          prev.map((order) =>
+            order.id === orderId
+              ? {
+                  ...order,
+                  ...updates,
+                }
+              : order
+          )
+        );
+      } catch (decisionError) {
+        enqueueSnackbar(getErrorMessage(decisionError, 'Unable to process this order action.'), {
+          variant: 'error',
+        });
+        throw decisionError;
+      }
+    },
+    [enqueueSnackbar, refreshOrders]
+  );
 
   return (
     <Container maxWidth={settings.themeStretch ? false : 'lg'}>
@@ -225,17 +259,22 @@ export default function SPVDetailsView() {
           error={unallocatedFundsError}
         />
       )}
-      {currentTab === 'refund_complaints' && (
+      {currentTab === 'complaints' && (
         <RefundComplaintsListView
           complaints={refundComplaints}
-          onSendReply={handleSendComplaintReply}
+          loading={complaintsLoading}
+          error={complaintsError}
           onUpdateComplaint={handleUpdateComplaint}
         />
       )}
       {currentTab === 'rejected_orders' && (
         <RejectedOrdersListView
-          orders={rejectedOrders}
+          orders={rejectedOrdersState}
+          loading={ordersLoading}
+          error={ordersError}
           onDecision={handleRejectedOrderDecision}
+          complaints={refundComplaints}
+          onLoadVerificationDetails={getSpvManagementPaymentVerificationDetails}
         />
       )}
       {currentTab === 'closed_transactions' && (

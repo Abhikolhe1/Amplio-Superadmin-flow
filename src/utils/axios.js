@@ -98,6 +98,13 @@ export const endpoints = {
     pools: (spvId) => `/spv-management/${spvId}/pools`,
     newPoolApplication: (spvId) => `/spv-pre/new-pool-application/${spvId}`,
     unallocatedFunds: '/admin/payment-verifications',
+    investmentOrders: '/admin/investment-orders',
+    paymentVerificationDetails: (verificationId) => `/admin/payment-verifications/${verificationId}/details`,
+    approvePaymentVerification: (verificationId) =>
+      `/admin/payment-verifications/${verificationId}/approve`,
+    complaints: '/admin/customer-support',
+    complaintDetails: (supportId) => `/admin/customer-support/${supportId}`,
+    rejectedOrders: '/admin/rejected-orders',
   },
   companyProfiles: {
     list: '/company-profiles',

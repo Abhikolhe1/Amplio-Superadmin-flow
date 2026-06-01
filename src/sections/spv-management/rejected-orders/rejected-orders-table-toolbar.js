@@ -24,7 +24,7 @@ export default function RejectedOrdersTableToolbar({ filters, onFilters }) {
         fullWidth
         value={filters.name}
         onChange={handleFilterName}
-        placeholder="Search investor, transaction, reason, or decision..."
+        placeholder="Search investor, email, order, verification, or status..."
         InputProps={{
           startAdornment: (
             <InputAdornment position="start">
