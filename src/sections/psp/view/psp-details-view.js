@@ -34,6 +34,7 @@ const TABS = [
   { value: 'transaction_history', label: 'Transaction History' },
   { value: 'risk_assessment', label: 'Risk Assessment' },
   { value: 'bank_management', label: 'Bank Management' },
+  { value: 'funded_transactions', label: 'Fundeed Transactions' },
 ];
 
 const SETTLED_STATUS = 'SETTLED';
@@ -341,6 +342,9 @@ export default function PSPDetailsView() {
         <PSPDetailsRiskAssessmentView assessment={pspData.riskAssessment} />
       )}
       {currentTab === 'bank_management' && <PSPBankManagementView pspId={id} />}
+      {currentTab === 'funded_transactions' && (
+        <PSPDetailsTransactionHistoryView masterId={id} status="fundeed" />
+      )}
     </Container>
   );
 }

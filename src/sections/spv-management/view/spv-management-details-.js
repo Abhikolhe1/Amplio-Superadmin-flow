@@ -32,6 +32,7 @@ import {
   useGetSpvManagementPools,
   useGetSpvUnallocatedFunds,
   updateSpvManagementComplaint,
+  useGetSpvPoolTransactions,
 } from 'src/api/spvManagement';
 import { buildSpvDetails, buildSpvPoolRows } from '../utils';
 
@@ -63,6 +64,7 @@ export default function SPVDetailsView() {
   const { orders, ordersLoading, ordersError, refreshOrders } = useGetSpvManagementOrders(id);
   const apiSpv = useMemo(() => spvList.find((item) => item.spvId === id), [id, spvList]);
   const spv = useMemo(() => buildSpvDetails(apiSpv), [apiSpv]);
+  const { transactions, transactionsLoading } = useGetSpvPoolTransactions(id, spv?.name);
   const mappedPools = useMemo(() => buildSpvPoolRows(pools), [pools]);
   const [refundComplaints, setRefundComplaints] = useState([]);
   const [rejectedOrdersState, setRejectedOrdersState] = useState([]);
@@ -250,7 +252,7 @@ export default function SPVDetailsView() {
         />
       )}
       {currentTab === 'transaction_history' && (
-        <TransactionHistoryListView transactions={[]} />
+        <TransactionHistoryListView transactions={transactions} />
       )}
       {currentTab === 'unallocated_funds' && (
         <UnallocatedFundsListView

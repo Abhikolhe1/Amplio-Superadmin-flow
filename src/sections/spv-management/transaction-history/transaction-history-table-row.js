@@ -13,6 +13,8 @@ const STATUS_COLOR = {
   completed: 'success',
   pending: 'warning',
   failed: 'error',
+  active: 'info',
+  settled: 'success',
 };
 
 export default function TransactionHistoryTableRow({ row }) {
@@ -44,12 +46,6 @@ export default function TransactionHistoryTableRow({ row }) {
                       typography: 'caption',
                     }}
                   />
-      </TableCell>
-
-      <TableCell>
-        <Label variant="soft" color={STATUS_COLOR[String(status || '').toLowerCase()] || 'default'}>
-          {status}
-        </Label>
       </TableCell>
     </TableRow>
   );

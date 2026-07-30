@@ -105,6 +105,7 @@ export const endpoints = {
     complaints: '/admin/customer-support',
     complaintDetails: (supportId) => `/admin/customer-support/${supportId}`,
     rejectedOrders: '/admin/rejected-orders',
+    poolTransactions: (spvId) => `/spv-management/${spvId}/pool-transactions`,
   },
   companyProfiles: {
     list: '/company-profiles',
@@ -119,6 +120,7 @@ export const endpoints = {
     statusList: (status) => `/merchant-profiles?status=${status}`,
     filterStatusList: (filter, status) => `/merchant-profiles?filter=${filter}&status=${status}`,
     details: (id) => `/merchant-profiles/${id}`,
+    settlements: (id) => `/merchant-profiles/${id}/settlements`,
   },
   investorProfiles: {
     list: '/investor-profiles',

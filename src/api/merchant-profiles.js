@@ -91,3 +91,21 @@ export function useFilterMerchantProfiles(params) {
         [data, error, isLoading, isValidating]
     );
 }
+
+export function useGetMerchantSettlements(id) {
+    const URL = id ? endpoints.merchantProfiles.settlements(id) : null;
+    const { data, isLoading, error, isValidating, mutate } = useSWR(URL, fetcher, {
+        keepPreviousData: true,
+    });
+
+    return useMemo(
+        () => ({
+            settlements: data?.data || { summary: {}, list: [] },
+            settlementsLoading: isLoading,
+            settlementsError: error,
+            settlementsValidating: isValidating,
+            refreshSettlements: mutate,
+        }),
+        [data?.data, error, isLoading, isValidating, mutate]
+    );
+}

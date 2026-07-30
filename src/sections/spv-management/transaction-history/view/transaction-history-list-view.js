@@ -24,7 +24,6 @@ const TABLE_HEAD = [
   { id: 'amount', label: 'Amount' },
   { id: 'pool', label: 'Pool' },
   { id: 'date', label: 'Date' },
-  { id: 'status', label: 'Status' },
 ];
 
 const defaultFilters = {

@@ -323,3 +323,43 @@ export async function approveSpvManagementPaymentVerification(verificationId, ve
   const res = await axiosInstance.post(URL, { verifiedAmount });
   return res?.data?.data || null;
 }
+
+function mapSpvPoolTransaction(item, spvName) {
+  const method = item.transaction?.method || 'Merchant Transaction';
+  const type = String(method).toUpperCase();
+  const upiFlow = item.transaction?.upi?.flow ? ` - ${item.transaction.upi.flow}` : '';
+  const bank = item.transaction?.bank ? ` - ${item.transaction.bank}` : '';
+  
+  return {
+    id: item.transaction?.orderId || item.transactionId || '-',
+    title: type,
+    subtitle: (item.transaction?.vpa && item.transaction.vpa !== 'null') ? `${item.transaction.vpa}${upiFlow || bank || ''}` : `Merchant Payout Account${bank || ''}`,
+    amount: `₹${Number(item.amount || 0).toLocaleString('en-IN')}`,
+    pool: spvName || 'SPV Pool',
+    date: item.createdAt || new Date(),
+    status: item.status || 'ACTIVE',
+  };
+}
+
+export function useGetSpvPoolTransactions(spvId, spvName) {
+  const URL = spvId ? endpoints.spvManagement.poolTransactions(spvId) : null;
+  const { data, isLoading, error, isValidating, mutate } = useSWR(URL, fetcher, {
+    keepPreviousData: true,
+  });
+
+  const transactions = useMemo(
+    () => (data?.data || []).map((item) => mapSpvPoolTransaction(item, spvName)),
+    [data?.data, spvName]
+  );
+
+  return useMemo(
+    () => ({
+      transactions,
+      transactionsLoading: isLoading,
+      transactionsError: error,
+      transactionsValidating: isValidating,
+      refreshTransactions: mutate,
+    }),
+    [transactions, error, isLoading, isValidating, mutate]
+  );
+}

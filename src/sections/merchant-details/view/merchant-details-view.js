@@ -13,7 +13,7 @@ import CustomBreadcrumbs from 'src/components/custom-breadcrumbs';
 // mock
 import { _merchantDetailsList } from 'src/_mock/_merchantDetails';
 //
-import { useGetMerchantProfile } from 'src/api/merchant-profiles';
+import { useGetMerchantProfile, useGetMerchantSettlements } from 'src/api/merchant-profiles';
 import MerchantDetailsBasicInfoView from '../basic-info/view/merchant-details-basic-info-view';
 import MerchantDetailsDocumentsView from '../documents/view/merchant-details-documents-view';
 import MerchantDetailsBankView from '../bank/view/merchant-details-bank-view';
@@ -51,6 +51,7 @@ export default function MerchantDetailsView() {
 
   const { merchantProfile, merchantProfileLoading, refreshProfilesDetails } =
     useGetMerchantProfile(id);
+  const { settlements, settlementsLoading } = useGetMerchantSettlements(id);
 
   const merchantDetail = merchantProfile?.data;
 
@@ -69,9 +70,9 @@ export default function MerchantDetailsView() {
     ...merchantDetail?.receivablesSummary && { receivablesSummary: merchantDetail.receivablesSummary },
     ...merchantDetail?.receivables && { receivables: merchantDetail.receivables },
     ...merchantDetail?.auditTrail && { auditTrail: merchantDetail.auditTrail },
-    ...merchantDetail?.settlements && { settlements: merchantDetail.settlements },
+    settlements: (settlements && settlements.list && settlements.list.length > 0) ? settlements : mockMerchant.settlements,
     ...merchantDetail?.receivable && { receivable: merchantDetail.receivable },
-  }), [merchantDetail, mockMerchant]);
+  }), [merchantDetail, mockMerchant, settlements]);
 
   const tab = searchParams.get('tab');
 

@@ -37,7 +37,7 @@ const defaultFilters = {
 
 // ----------------------------------------------------------------------
 
-export default function PSPTransactionHistoryTab({ masterId }) {
+export default function PSPTransactionHistoryTab({ masterId, status }) {
   const table = useTable();
 
   const [filters, setFilters] = useState(defaultFilters);
@@ -46,8 +46,9 @@ export default function PSPTransactionHistoryTab({ masterId }) {
     () => ({
       limit: table.rowsPerPage,
       skip: table.page * table.rowsPerPage,
+      ...(status && { status }),
     }),
-    [table.page, table.rowsPerPage]
+    [table.page, table.rowsPerPage, status]
   );
 
   const { transactions = [], totalCount = 0 } = useGetPspTransactions(masterId, params);
@@ -150,4 +151,5 @@ function applyFilter({ inputData, comparator, filters }) {
 
 PSPTransactionHistoryTab.propTypes = {
   masterId: PropTypes.string,
+  status: PropTypes.string,
 };
